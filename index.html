@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Portal | Manage Exercises</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --accent: #10b981;
+            --danger: #ef4444;
+            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --container-width: 1100px;
+            --glass: rgba(255, 255, 255, 0.7);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1,
+        h2,
+        h3,
+        .logo .text {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+        }
+
+        .container {
+            max-width: var(--container-width);
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        header {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        header nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-btn,
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: var(--radius);
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--border);
+            color: var(--text-main);
+        }
+
+        .btn-danger {
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .card {
+            background: var(--bg-card);
+            padding: 2rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        main>section {
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        .login-container {
+            max-width: 400px;
+            margin: 10vh auto;
+        }
+
+        .status-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-badge.open {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-badge.closed {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            padding: 2.5rem;
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 500px;
+            position: relative;
+            box-shadow: var(--shadow-lg);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        #toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1001;
+        }
+
+        .toast {
+            background: var(--text-main);
+            color: white;
+            padding: 0.8rem 1.2rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            margin-top: 0.5rem;
+            animation: fadeIn 0.3s ease;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Quiz Editor specific */
+        .question-card {
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            margin-bottom: 1rem;
+            background: #fbfbfc;
+            position: relative;
+        }
+
+        .question-card:hover {
+            border-color: var(--primary);
+        }
+
+        .q-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .q-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .q-type-select {
+            width: auto;
+            display: inline-block;
+            padding: 0.4rem 0.8rem;
+        }
+
+        .q-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .q-option input[type="text"] {
+            flex: 1;
+        }
+
+        /* Responses */
+        .filter-bar {
+            background: #f1f5f9;
+            padding: 1rem;
+            border-radius: var(--radius);
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+        }
+    </style>
+</head>
+
+<body class="light-mode">
+    <div id="app">
+        <header id="main-header" class="hidden">
+            <nav class="container">
+                <div class="logo">
+                    <span class="icon">🍎</span>
+                    <span class="text">TeacherPortal</span>
+                </div>
+                <div class="nav-links">
+                    <button id="nav-dashboard" class="nav-btn active">Dashboard</button>
+                    <button id="nav-logout" class="nav-btn secondary">Logout</button>
+                </div>
+            </nav>
+        </header>
+
+        <main id="view-container" class="container">
+            <!-- Dynamic Content -->
+        </main>
+
+        <footer id="main-footer" class="hidden">
+            <div class="container" style="text-align: center; padding: 2rem 0; color: var(--text-muted);">
+                <p>&copy; 2026 TeacherPortal. Secure & Scalable.</p>
+            </div>
+        </footer>
+
+        <div id="toast-container"></div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * Teacher Portal - Consolidated App Script
+         */
+
+        const APP_STATE_KEY = 'teacher_portal_state';
+
+        const defaultState = {
+            isLoggedIn: false,
+            subjects: [
+                { id: '1', name: 'Computer Applications', icon: '💻', exercises: [] },
+                { id: '2', name: 'MakerSpace', icon: '🛠️', exercises: [] },
+                { id: '3', name: 'AP Computer Principles', icon: '⚡', exercises: [] }
+            ],
+            studentSubmissions: []
+        };
+
+        class App {
+            constructor() {
+                this.state = this.loadState();
+                this.viewContainer = document.getElementById('view-container');
+                this.header = document.getElementById('main-header');
+                this.footer = document.getElementById('main-footer');
+
+                this.init();
+            }
+
+            loadState() {
+                const saved = localStorage.getItem(APP_STATE_KEY);
+                return saved ? JSON.parse(saved) : defaultState;
+            }
+
+            saveState() {
+                localStorage.setItem(APP_STATE_KEY, JSON.stringify(this.state));
+            }
+
+            init() {
+                this.handleRouting();
+                this.setupGlobalEvents();
+                window.addEventListener('hashchange', () => this.handleRouting());
+            }
+
+            handleRouting() {
+                const hash = window.location.hash;
+                if (hash.startsWith('#/student/')) {
+                    const exerciseId = hash.split('/student/')[1];
+                    this.renderStudentForm(exerciseId);
+                    this.header.classList.add('hidden');
+                    this.footer.classList.add('hidden');
+                } else {
+                    this.render();
+                }
+            }
+
+            render() {
+                if (!this.state.isLoggedIn) {
+                    this.renderLogin();
+                    this.header.classList.add('hidden');
+                    this.footer.classList.add('hidden');
+                } else {
+                    const hash = window.location.hash;
+                    if (hash.startsWith('#/subject/') && hash.includes('/quiz/') && hash.endsWith('/edit')) {
+                        const parts = hash.split('/');
+                        this.renderQuizEditor(parts[2], parts[4]);
+                    } else if (hash.startsWith('#/subject/') && hash.includes('/quiz/') && hash.endsWith('/responses')) {
+                        const parts = hash.split('/');
+                        this.renderResponses(parts[2], parts[4]);
+                    } else if (hash.startsWith('#/subject/')) {
+                        const id = hash.split('/subject/')[1];
+                        this.renderSubjectDetail(id);
+                    } else {
+                        this.renderDashboard();
+                    }
+                    this.header.classList.remove('hidden');
+                    this.footer.classList.remove('hidden');
+                }
+            }
+
+            setupGlobalEvents() {
+                document.getElementById('nav-logout').addEventListener('click', () => {
+                    this.state.isLoggedIn = false;
+                    this.saveState();
+                    window.location.hash = '';
+                    this.render();
+                });
+
+                document.getElementById('nav-dashboard').addEventListener('click', () => {
+                    window.location.hash = '';
+                });
+
+                document.querySelector('.close-modal').addEventListener('click', () => this.closeModal());
+                window.addEventListener('click', (e) => {
+                    if (e.target === document.getElementById('modal-overlay')) this.closeModal();
+                });
+            }
+
+            renderLogin() {
+                this.viewContainer.innerHTML = `
+                    <section class="login-container">
+                        <div class="card">
+                            <h2 style="margin-bottom: 2rem; text-align: center;">Teacher Login</h2>
+                            <form id="login-form">
+                                <div class="form-group">
+                                    <label>Username (demo)</label>
+                                    <input type="text" id="username" value="admin" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Password (demo)</label>
+                                    <input type="password" id="password" value="admin" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="width: 100%;">Enter Dashboard</button>
+                            </form>
+                        </div>
+                    </section>
+                `;
+
+                document.getElementById('login-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.state.isLoggedIn = true;
+                    this.saveState();
+                    this.render();
+                });
+            }
+
+            renderDashboard() {
+                this.viewContainer.innerHTML = `
+                    <section id="dashboard-view">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                            <h1>Your Subjects</h1>
+                            <button class="btn btn-primary" id="add-subject-btn">+ Add Subject</button>
+                        </div>
+                        <div class="grid" id="subjects-grid">
+                            ${this.state.subjects.map(s => `
+                                <div class="card subject-card" data-id="${s.id}">
+                                    <div style="font-size: 3rem; margin-bottom: 1rem;">${s.icon}</div>
+                                    <h3 style="margin-bottom: 0.5rem;">${s.name}</h3>
+                                    <p style="color: var(--text-muted); margin-bottom: 1.5rem;">${s.exercises.length} Exercises Created</p>
+                                    <div style="display: flex; gap: 0.5rem;">
+                                        <button class="btn btn-secondary" onclick="window.location.hash='#/subject/${s.id}'">Manage</button>
+                                        <button class="btn btn-danger" onclick="app.deleteSubject('${s.id}')">Delete</button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </section>
+                `;
+
+                document.getElementById('add-subject-btn').addEventListener('click', () => this.showAddSubjectModal());
+            }
+
+            renderSubjectDetail(subjectId) {
+                const subject = this.state.subjects.find(s => s.id === subjectId);
+                if (!subject) return (window.location.hash = '');
+
+                this.viewContainer.innerHTML = `
+                    <section id="subject-detail">
+                        <div style="margin-bottom: 2rem;">
+                            <button class="btn btn-secondary" onclick="window.location.hash=''" style="margin-bottom: 1rem;">← Back to Dashboard</button>
+                            <h1>${subject.icon} ${subject.name}</h1>
+                        </div>
+                        
+                        <div class="card">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                                <h2>Quizzes & Exercises</h2>
+                                <button class="btn btn-primary" id="add-exercise-btn">+ Create New</button>
+                            </div>
+                            
+                            <div id="exercise-list">
+                                ${subject.exercises.length === 0 ? '<p style="color: var(--text-muted);">No items found. Add your first one!</p>' : `
+                                    <div class="exercise-table-wrapper" style="overflow-x: auto;">
+                                        <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
+                                            <thead>
+                                                <tr style="text-align: left; border-bottom: 2px solid var(--border);">
+                                                    <th style="padding: 1rem 0;">Name</th>
+                                                    <th>Type</th>
+                                                    <th>Status</th>
+                                                    <th>Submissions</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                ${subject.exercises.map(ex => `
+                                                    <tr style="border-bottom: 1px solid var(--border);">
+                                                        <td style="padding: 1.5rem 0;">
+                                                            <div style="font-weight: 600;">${ex.title}</div>
+                                                            <div style="font-size: 0.8rem; color: var(--text-muted);">${ex.id}</div>
+                                                        </td>
+                                                        <td style="text-transform: capitalize;">${ex.type || 'form'}</td>
+                                                        <td>
+                                                            <span class="status-badge ${ex.isOpen ? 'open' : 'closed'}">${ex.isOpen ? 'Published' : 'Draft/Closed'}</span>
+                                                        </td>
+                                                        <td>${this.state.studentSubmissions.filter(s => s.exerciseId === ex.id).length}</td>
+                                                        <td>
+                                                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                                                <button class="btn btn-secondary" onclick="app.toggleExerciseStatus('${subject.id}', '${ex.id}')">${ex.isOpen ? 'Unpublish' : 'Publish'}</button>
+                                                                ${ex.type === 'quiz' ? `
+                                                                    <button class="btn btn-secondary" onclick="window.location.hash='#/subject/${subject.id}/quiz/${ex.id}/edit'">Edit Quiz</button>
+                                                                ` : `
+                                                                    <button class="btn btn-secondary" onclick="app.editExercise('${subject.id}', '${ex.id}')">Edit Info</button>
+                                                                `}
+                                                                <button class="btn btn-primary" onclick="app.copyStudentLink('${ex.id}')">Get Link</button>
+                                                                <button class="btn btn-secondary" onclick="window.location.hash='#/subject/${subject.id}/quiz/${ex.id}/responses'">Responses</button>
+                                                                <button class="btn btn-danger" onclick="app.deleteExercise('${subject.id}', '${ex.id}')">Del</button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                `).join('')}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                    </section>
+                `;
+
+                document.getElementById('add-exercise-btn').addEventListener('click', () => this.showExerciseModal(subjectId));
+            }
+
+            openModal(content) {
+                document.getElementById('modal-body').innerHTML = content;
+                document.getElementById('modal-overlay').classList.remove('hidden');
+            }
+
+            closeModal() {
+                document.getElementById('modal-overlay').classList.add('hidden');
+            }
+
+            showAddSubjectModal() {
+                this.openModal(`
+                    <h2>Add New Subject</h2>
+                    <form id="add-subject-form" style="margin-top: 1.5rem;">
+                        <div class="form-group">
+                            <label>Subject Name</label>
+                            <input type="text" id="subj-name" placeholder="e.g. Graphic Design" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Icon Emoji</label>
+                            <input type="text" id="subj-icon" placeholder="🎨" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">Create Subject</button>
+                    </form>
+                `);
+
+                document.getElementById('add-subject-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const newSubj = {
+                        id: Date.now().toString(),
+                        name: document.getElementById('subj-name').value,
+                        icon: document.getElementById('subj-icon').value,
+                        exercises: []
+                    };
+                    this.state.subjects.push(newSubj);
+                    this.saveState();
+                    this.closeModal();
+                    this.render();
+                });
+            }
+
+            deleteSubject(id) {
+                if (confirm('Are you sure you want to delete this subject and all its exercises?')) {
+                    this.state.subjects = this.state.subjects.filter(s => s.id !== id);
+                    this.saveState();
+                    this.render();
+                }
+            }
+
+            renderQuizEditor(subjectId, quizId) {
+                const subject = this.state.subjects.find(s => s.id === subjectId);
+                const quiz = subject.exercises.find(e => e.id === quizId);
+                if (!quiz.questions) quiz.questions = [];
+
+                this.viewContainer.innerHTML = `
+                    <section id="quiz-editor">
+                        <div style="margin-bottom: 2rem;">
+                            <button class="btn btn-secondary" onclick="window.location.hash='#/subject/${subjectId}'" style="margin-bottom: 1rem;">← Back to Subject</button>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h1>Quiz Editor: ${quiz.title}</h1>
+                                <div>
+                                    <button class="btn btn-secondary" onclick="app.saveQuiz('${subjectId}', '${quizId}')">Save All Changes</button>
+                                    <button class="btn btn-primary" onclick="app.publishQuiz('${subjectId}', '${quizId}')">${quiz.isOpen ? 'Update Published' : 'Publish Quiz'}</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="question-list">
+                            ${quiz.questions.map((q, idx) => `
+                                <div class="card question-card" data-index="${idx}">
+                                    <div class="q-header">
+                                        <h3>Question ${idx + 1}</h3>
+                                        <div class="q-actions">
+                                            <button class="btn btn-secondary" onclick="app.moveQuestion('${subjectId}', '${quizId}', ${idx}, -1)">↑</button>
+                                            <button class="btn btn-secondary" onclick="app.moveQuestion('${subjectId}', '${quizId}', ${idx}, 1)">↓</button>
+                                            <button class="btn btn-danger" onclick="app.deleteQuestion('${subjectId}', '${quizId}', ${idx})">Delete</button>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Question Text</label>
+                                        <input type="text" class="q-text" value="${q.text}" onchange="app.updateQuestion('${subjectId}', '${quizId}', ${idx}, 'text', this.value)">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Type</label>
+                                        <select class="q-type q-type-select" onchange="app.updateQuestion('${subjectId}', '${quizId}', ${idx}, 'type', this.value)">
+                                            <option value="multiple" ${q.type === 'multiple' ? 'selected' : ''}>Multiple Choice</option>
+                                            <option value="short" ${q.type === 'short' ? 'selected' : ''}>Short Answer</option>
+                                            <option value="long" ${q.type === 'long' ? 'selected' : ''}>Long Answer</option>
+                                        </select>
+                                    </div>
+                                    <div class="q-options-container" id="q-options-${idx}">
+                                        ${this.renderQuestionOptions(subjectId, quizId, idx, q)}
+                                    </div>
+                                </div>
+                            `).join('')}
+                            ${quiz.questions.length === 0 ? '<p style="text-align:center; padding: 2rem; color: var(--text-muted);">No questions yet. Click below to add one!</p>' : ''}
+                        </div>
+
+                        <button class="btn btn-primary" style="width: 100%; margin-top: 1rem;" onclick="app.addQuestion('${subjectId}', '${quizId}')">+ Add Question</button>
+                    </section>
+                `;
+            }
+
+            renderQuestionOptions(subjectId, quizId, qIdx, q) {
+                if (q.type !== 'multiple') return '';
+                if (!q.options) q.options = [{ text: 'Option 1', isCorrect: false }];
+
+                return `
+                    <label>Options (Check correct answer)</label>
+                    <div class="options-list">
+                        ${q.options.map((opt, oIdx) => `
+                            <div class="q-option">
+                                <input type="checkbox" ${opt.isCorrect ? 'checked' : ''} onchange="app.updateOption('${subjectId}', '${quizId}', ${qIdx}, ${oIdx}, 'isCorrect', this.checked)">
+                                <input type="text" value="${opt.text}" onchange="app.updateOption('${subjectId}', '${quizId}', ${qIdx}, ${oIdx}, 'text', this.value)">
+                                <button class="btn btn-danger" style="padding: 0.3rem 0.6rem;" onclick="app.removeOption('${subjectId}', '${quizId}', ${qIdx}, ${oIdx})">×</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <button class="btn btn-secondary" style="margin-top: 0.5rem; font-size: 0.8rem;" onclick="app.addOption('${subjectId}', '${quizId}', ${qIdx})">+ Add Option</button>
+                `;
+            }
+
+            renderResponses(subjectId, quizId) {
+                const subject = this.state.subjects.find(s => s.id === subjectId);
+                const quiz = subject.exercises.find(e => e.id === quizId);
+                const responses = this.state.studentSubmissions.filter(s => s.exerciseId === quizId);
+
+                this.viewContainer.innerHTML = `
+                    <section id="responses-view">
+                        <div style="margin-bottom: 2rem;">
+                            <button class="btn btn-secondary" onclick="window.location.hash='#/subject/${subjectId}'" style="margin-bottom: 1rem;">← Back to Subject</button>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h1>Responses: ${quiz.title}</h1>
+                                <button class="btn btn-primary" onclick="app.exportCSV('${quizId}')">Export to CSV</button>
+                            </div>
+                        </div>
+
+                        <div class="filter-bar">
+                            <div class="form-group" style="margin:0; flex:1;">
+                                <label>Search Name</label>
+                                <input type="text" id="filter-name" placeholder="John Doe..." oninput="app.applyFilters()">
+                            </div>
+                            <div class="form-group" style="margin:0; flex:1;">
+                                <label>Filter Group</label>
+                                <input type="text" id="filter-group" placeholder="Section A..." oninput="app.applyFilters()">
+                            </div>
+                        </div>
+
+                        <div class="card" id="responses-list">
+                            ${this.renderResponsesTable(responses)}
+                        </div>
+                    </section>
+                `;
+            }
+
+            renderResponsesTable(responses) {
+                if (responses.length === 0) return '<p color="var(--text-muted)">No responses yet.</p>';
+                return `
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="text-align: left; border-bottom: 2px solid var(--border);">
+                                    <th style="padding: 1rem 0;">Student</th>
+                                    <th>Group</th>
+                                    <th>Timestamp</th>
+                                    <th>Link</th>
+                                </tr>
+                            </thead>
+                            <tbody id="responses-tbody">
+                                ${responses.map(r => `
+                                    <tr style="border-bottom: 1px solid var(--border);">
+                                        <td style="padding: 1rem 0;">
+                                            <div style="font-weight: 600;">${r.name}</div>
+                                            <div style="font-size: 0.8rem; color: var(--text-muted);">${r.email}</div>
+                                        </td>
+                                        <td>${r.class}</td>
+                                        <td>${new Date(r.timestamp).toLocaleString()}</td>
+                                        <td><button class="btn btn-secondary" style="font-size: 0.8rem;" onclick="app.viewDetailResponse('${r.id}')">View Answers</button></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+            // Quiz logic helpers
+            addQuestion(sId, qId) {
+                const subject = this.state.subjects.find(s => s.id === sId);
+                const quiz = subject.exercises.find(e => e.id === qId);
+                quiz.questions.push({ text: 'New Question', type: 'short', options: [] });
+                this.renderQuizEditor(sId, qId);
+            }
+
+            updateQuestion(sId, qId, qIdx, key, val) {
+                const quiz = this.state.subjects.find(s => s.id === sId).exercises.find(e => e.id === qId);
+                quiz.questions[qIdx][key] = val;
+                if (key === 'type') this.renderQuizEditor(sId, qId);
+            }
+
+            moveQuestion(sId, qId, qIdx, dir) {
+                const quiz = this.state.subjects.find(s => s.id === sId).exercises.find(e => e.id === qId);
+                const newIdx = qIdx + dir;
+                if (newIdx >= 0 && newIdx < quiz.questions.length) {
+                    const temp = quiz.questions[qIdx];
+                    quiz.questions[qIdx] = quiz.questions[newIdx];
+                    quiz.questions[newIdx] = temp;
+                    this.renderQuizEditor(sId, qId);
+                }
+            }
+
+            deleteQuestion(sId, qId, qIdx) {
+                const quiz = this.state.subjects.find(s => s.id === sId).exercises.find(e => e.id === qId);
+                quiz.questions.splice(qIdx, 1);
+                this.renderQuizEditor(sId, qId);
+            }
+
+            addOption(sId, qId, qIdx) {
+                const quiz = this.state.subjects.find(s => s.id === sId).exercises.find(e => e.id === qId);
+                quiz.questions[qIdx].options.push({ text: 'New Option', isCorrect: false });
+                this.renderQuizEditor(sId, qId);
+            }
+
+            updateOption(sId, qId, qIdx, oIdx, key, val) {
+                const quiz = this.state.subjects.find(s => s.id === sId).exercises.find(e => e.id === qId);
+                quiz.questions[qIdx].options[oIdx][key] = val;
+            }
+
+            removeOption(sId, qId, qIdx, oIdx) {
+                const quiz = this.state.subjects.find(s => s.id === sId).exercises.find(e => e.id === qId);
+                quiz.questions[qIdx].options.splice(oIdx, 1);
+                this.renderQuizEditor(sId, qId);
+            }
+
+            saveQuiz(sId, qId) {
+                this.saveState();
+                this.showToast('Quiz progress saved locally.');
+            }
+
+            publishQuiz(sId, qId) {
+                const quiz = this.state.subjects.find(s => s.id === sId).exercises.find(e => e.id === qId);
+                quiz.isOpen = true;
+                this.saveState();
+                this.showToast('Quiz published successfully!');
+            }
+
+            // Reporting logic
+            applyFilters() {
+                const nameF = document.getElementById('filter-name').value.toLowerCase();
+                const groupF = document.getElementById('filter-group').value.toLowerCase();
+                const rows = document.querySelectorAll('#responses-tbody tr');
+
+                rows.forEach(row => {
+                    const name = row.cells[0].textContent.toLowerCase();
+                    const group = row.cells[1].textContent.toLowerCase();
+                    const show = name.includes(nameF) && group.includes(groupF);
+                    row.style.display = show ? '' : 'none';
+                });
+            }
+
+            exportCSV(quizId) {
+                const responses = this.state.studentSubmissions.filter(s => s.exerciseId === quizId);
+                if (responses.length === 0) return alert('No responses to export.');
+
+                let csv = 'Name,Group,Email,Timestamp,Answers\n';
+                responses.forEach(r => {
+                    const answersStr = r.answers ? JSON.stringify(r.answers).replace(/"/g, '""') : '';
+                    csv += `"${r.name}","${r.class}","${r.email}","${r.timestamp}","${answersStr}"\n`;
+                });
+
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.setAttribute('href', url);
+                a.setAttribute('download', `responses_${quizId}.csv`);
+                a.click();
+            }
+
+            viewDetailResponse(submissionId) {
+                const sub = this.state.studentSubmissions.find(s => s.id === parseInt(submissionId));
+                this.openModal(`
+                    <h2>Response Details</h2>
+                    <p style="margin-bottom: 1.5rem"><strong>${sub.name}</strong> (${sub.class})</p>
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        ${sub.answers ? Object.entries(sub.answers).map(([q, a]) => `
+                            <div style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);">
+                                <p style="font-weight: 600;">${q}</p>
+                                <p>${a}</p>
+                            </div>
+                        `).join('') : '<p>No answer data stored.</p>'}
+                    </div>
+                `);
+            }
+
+            showExerciseModal(subjectId, exerciseId = null) {
+                const subject = this.state.subjects.find(s => s.id === subjectId);
+                const exercise = exerciseId ? subject.exercises.find(e => e.id === exerciseId) : null;
+
+                this.openModal(`
+                    <h2>${exercise ? 'Edit' : 'Create'}</h2>
+                    <form id="exercise-form" style="margin-top: 1.5rem;">
+                        <div class="form-group">
+                            <label>Title</label>
+                            <input type="text" id="ex-title" value="${exercise ? exercise.title : ''}" placeholder="e.g. Unit 1 Quiz" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Type</label>
+                            <select id="ex-type" ${exercise ? 'disabled' : ''}>
+                                <option value="form" ${exercise && exercise.type === 'form' ? 'selected' : ''}>Standard Form (Basic Info)</option>
+                                <option value="quiz" ${exercise && exercise.type === 'quiz' ? 'selected' : ''}>Quiz (Questions/Answers)</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="display: flex; align-items: center; gap: 1rem;">
+                            <label style="margin: 0;">Status: Open/Published</label>
+                            <input type="checkbox" id="ex-open" ${exercise ? (exercise.isOpen ? 'checked' : '') : ''} style="width: auto;">
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">${exercise ? 'Save' : 'Create'}</button>
+                    </form>
+                `);
+
+                document.getElementById('exercise-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const title = document.getElementById('ex-title').value;
+                    const isOpen = document.getElementById('ex-open').checked;
+                    const type = document.getElementById('ex-type').value;
+
+                    if (exercise) {
+                        exercise.title = title;
+                        exercise.isOpen = isOpen;
+                    } else {
+                        subject.exercises.push({
+                            id: 'ex-' + Math.random().toString(36).substr(2, 9),
+                            title,
+                            isOpen,
+                            type,
+                            questions: type === 'quiz' ? [] : null
+                        });
+                    }
+                    this.saveState();
+                    this.closeModal();
+                    this.render();
+                });
+            }
+
+            toggleExerciseStatus(subjectId, exerciseId) {
+                const subject = this.state.subjects.find(s => s.id === subjectId);
+                const exercise = subject.exercises.find(e => e.id === exerciseId);
+                exercise.isOpen = !exercise.isOpen;
+                this.saveState();
+                this.render();
+            }
+
+            deleteExercise(subjectId, exerciseId) {
+                if (confirm('Delete this exercise/quiz?')) {
+                    const subject = this.state.subjects.find(s => s.id === subjectId);
+                    subject.exercises = subject.exercises.filter(e => e.id !== exerciseId);
+                    this.saveState();
+                    this.render();
+                }
+            }
+
+            editExercise(subjectId, exerciseId) {
+                this.showExerciseModal(subjectId, exerciseId);
+            }
+
+            copyStudentLink(exerciseId) {
+                const url = window.location.href.split('#')[0] + '#/student/' + exerciseId;
+                navigator.clipboard.writeText(url).then(() => {
+                    this.showToast('Student link copied!');
+                });
+            }
+
+            showToast(message) {
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                toast.className = 'toast';
+                toast.textContent = message;
+                container.appendChild(toast);
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            }
+
+            renderStudentForm(exerciseId) {
+                let exercise = null;
+                let subject = null;
+                for (const s of this.state.subjects) {
+                    const ex = s.exercises.find(e => e.id === exerciseId);
+                    if (ex) {
+                        exercise = ex;
+                        subject = s;
+                        break;
+                    }
+                }
+
+                if (!exercise) {
+                    this.viewContainer.innerHTML = `<div class="card" style="text-align:center; margin-top: 10vh;"><h1>404</h1><p>Exercise not found.</p></div>`;
+                    return;
+                }
+
+                if (!exercise.isOpen) {
+                    this.viewContainer.innerHTML = `
+                        <div class="card" style="text-align:center; max-width: 500px; margin: 10vh auto;">
+                            <span style="font-size: 4rem;">🔒</span>
+                            <h2 style="margin-top: 1rem;">Not Available</h2>
+                            <p style="color: var(--text-muted); margin-top: 1rem;">This quiz or form is not currently open for submissions.</p>
+                            <button class="btn btn-secondary" onclick="window.location.hash=''" style="margin-top: 2rem;">Return Home</button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                this.viewContainer.innerHTML = `
+                    <section class="login-container" style="max-width: 600px;">
+                        <div class="card">
+                            <div style="text-align: center; margin-bottom: 2rem;">
+                                <span style="font-size: 3rem;">${exercise.type === 'quiz' ? '🧠' : '📝'}</span>
+                                <h2 style="margin-top: 0.5rem;">${exercise.title}</h2>
+                                <p style="color: var(--text-muted);">${subject.name}</p>
+                            </div>
+                            <form id="student-submission-form">
+                                <div style="background: #f8fafc; padding: 1.5rem; border-radius: var(--radius); margin-bottom: 2rem;">
+                                    <h4 style="margin-bottom: 1rem;">Student Information</h4>
+                                    <div class="form-group">
+                                        <label>Full Name</label>
+                                        <input type="text" id="stud-name" placeholder="John Doe" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Class / Group</label>
+                                        <input type="text" id="stud-class" placeholder="Section A" required>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label>Email Address</label>
+                                        <input type="email" id="stud-email" placeholder="john@example.com" required>
+                                    </div>
+                                </div>
+
+                                ${exercise.type === 'quiz' ? `
+                                    <div id="quiz-questions">
+                                        ${exercise.questions.map((q, qIdx) => `
+                                            <div style="margin-bottom: 2rem;">
+                                                <p style="font-weight: 600; margin-bottom: 0.8rem;">${qIdx + 1}. ${q.text}</p>
+                                                ${this.renderStudentQuestionInput(q, qIdx)}
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+
+                                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Submit Response</button>
+                            </form>
+                        </div>
+                    </section>
+                `;
+
+                document.getElementById('student-submission-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+
+                    const answers = {};
+                    if (exercise.type === 'quiz') {
+                        exercise.questions.forEach((q, qIdx) => {
+                            const input = document.getElementsByName(`q-${qIdx}`);
+                            if (q.type === 'multiple') {
+                                const selected = Array.from(input).find(i => i.checked);
+                                answers[q.text] = selected ? selected.value : 'No answer';
+                            } else {
+                                answers[q.text] = input[0].value;
+                            }
+                        });
+                    }
+
+                    const submission = {
+                        id: Date.now(),
+                        exerciseId,
+                        name: document.getElementById('stud-name').value,
+                        class: document.getElementById('stud-class').value,
+                        email: document.getElementById('stud-email').value,
+                        answers,
+                        timestamp: new Date().toISOString()
+                    };
+                    this.state.studentSubmissions.push(submission);
+                    this.saveState();
+
+                    this.viewContainer.innerHTML = `
+                        <div class="card" style="text-align:center; max-width: 500px; margin: 10vh auto;">
+                            <span style="font-size: 4rem;">✅</span>
+                            <h2 style="margin-top: 1rem;">Thank You!</h2>
+                            <p style="color: var(--text-muted); margin-top: 1rem;">Your response for <strong>${exercise.title}</strong> has been received.</p>
+                        </div>
+                    `;
+                });
+            }
+
+            renderStudentQuestionInput(q, qIdx) {
+                if (q.type === 'short') {
+                    return `<input type="text" name="q-${qIdx}" placeholder="Your answer" required>`;
+                }
+                if (q.type === 'long') {
+                    return `<textarea name="q-${qIdx}" rows="4" placeholder="Your extensive answer" required></textarea>`;
+                }
+                if (q.type === 'multiple') {
+                    return `
+                        <div>
+                            ${q.options.map((opt, oIdx) => `
+                                <div class="q-option">
+                                    <input type="radio" name="q-${qIdx}" value="${opt.text}" id="q-${qIdx}-o-${oIdx}" required>
+                                    <label for="q-${qIdx}-o-${oIdx}" style="margin: 0; font-weight: 400; color: var(--text-main);">${opt.text}</label>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+                return '';
+            }
+        }
+
+        window.app = new App();
+    </script>
+</body>
+
+</html>
