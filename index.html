@@ -471,13 +471,13 @@
                 window.addEventListener('hashchange', () => this.handleRouting());
             }
 
-            handleRouting() {
+            async handleRouting() {
                 const hash = window.location.hash;
                 if (hash.startsWith('#/student/')) {
                     const exerciseId = hash.split('/student/')[1];
-                    this.renderStudentForm(exerciseId);
                     this.header.classList.add('hidden');
                     this.footer.classList.add('hidden');
+                    await this.renderStudentForm(exerciseId);
                 } else {
                     this.render();
                 }
@@ -1148,15 +1148,52 @@
                 }, 3000);
             }
 
-            renderStudentForm(exerciseId) {
+            async renderStudentForm(exerciseId) {
                 let exercise = null;
                 let subject = null;
+
+                // 1. Try to find exercise in local storage (Teacher Portal logic)
                 for (const s of this.state.subjects) {
                     const ex = s.exercises.find(e => e.id === exerciseId);
                     if (ex) {
                         exercise = ex;
                         subject = s;
                         break;
+                    }
+                }
+
+                // 2. If not found locally, fetch from Google Sheets (Remote logic for students/incognito)
+                if (!exercise) {
+                    this.viewContainer.innerHTML = `
+                        <div class="card" style="text-align:center; margin: 10vh auto; max-width: 400px;">
+                            <div class="loading-spinner" style="margin-bottom: 1rem;">⏳</div>
+                            <h3>Loading Exercise...</h3>
+                            <p style="color: var(--text-muted);">Fetching content from remote server.</p>
+                        </div>
+                    `;
+
+                    try {
+                        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwz0PVfW_xj-2orZqeEtl3S4TFT1zouQydiy7LTENMT9jo6Q1ZomKrFlWgVh-1r73X3/exec';
+                        const response = await fetch(`${GOOGLE_SCRIPT_URL}?exerciseId=${exerciseId}`);
+
+                        if (!response.ok) throw new Error('Failed to fetch from remote');
+
+                        const remoteData = await response.json();
+
+                        // User requirement: Retrieve title, type, questions, options, correct answers
+                        if (remoteData && remoteData.id) {
+                            exercise = {
+                                id: remoteData.id,
+                                title: remoteData.title,
+                                type: remoteData.type,
+                                isOpen: true, // If it's on Sheets, we assume it's meant to be accessible
+                                questions: remoteData.questions,
+                                content: remoteData.content // For document types
+                            };
+                            subject = { name: remoteData.subjectName || 'Remote Exercise' };
+                        }
+                    } catch (error) {
+                        console.error('Remote Fetch Error:', error);
                     }
                 }
 
