@@ -463,12 +463,35 @@
 
             saveState() {
                 localStorage.setItem(APP_STATE_KEY, JSON.stringify(this.state));
+                // Background sync to backend
+                fetch('http://localhost:5001/api/state', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(this.state)
+                }).catch(e => console.error('Failed to save state to backend:', e));
             }
 
-            init() {
+            async init() {
+                await this.syncStateFromBackend();
                 this.handleRouting();
                 this.setupGlobalEvents();
                 window.addEventListener('hashchange', () => this.handleRouting());
+            }
+
+            async syncStateFromBackend() {
+                try {
+                    const response = await fetch('http://localhost:5001/api/state');
+                    if (response.ok) {
+                        const backendState = await response.json();
+                        if (backendState && Object.keys(backendState).length > 0) {
+                            this.state = backendState;
+                            localStorage.setItem(APP_STATE_KEY, JSON.stringify(this.state));
+                            this.render(); // Re-render with new state
+                        }
+                    }
+                } catch (e) {
+                    console.error('Failed to sync state from backend:', e);
+                }
             }
 
             async handleRouting() {
@@ -1012,31 +1035,38 @@
             }
 
             async syncExerciseWithCloud(subject, exercise) {
-                const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwz0PVfW_xj-2orZqeEtl3S4TFT1zouQydiy7LTENMT9jo6Q1ZomKrFlWgVh-1r73X3/exec';
+                const API_URL = 'http://localhost:5001/api/quizzes';
 
                 const payload = {
-                    "action": "saveDefinition",
                     "exerciseId": exercise.id,
                     "title": exercise.title,
                     "type": exercise.type,
                     "questions": exercise.questions || [],
                     "content": exercise.content || '',
-                    "subjectName": subject.name
+                    "subjectName": subject.name,
+                    "isOpen": exercise.isOpen
                 };
 
                 try {
-                    // Using no-cors as per Apps Script Web App requirements for simple POST from static sites
-                    await fetch(GOOGLE_SCRIPT_URL, {
+                    const response = await fetch(API_URL, {
                         method: 'POST',
-                        mode: 'no-cors',
-                        cache: 'no-cache',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
-                    console.log('Exercise synced to cloud:', exercise.id);
+
+                    if (!response.ok) throw new Error('Backend failed');
+
+                    const result = await response.json();
+                    console.log('Exercise synced to backend:', result.quizId);
+
+                    // Update the local ID with the server ID if it changed
+                    if (result.quizId && exercise.id !== result.quizId) {
+                        exercise.id = result.quizId;
+                        this.saveState();
+                    }
                 } catch (error) {
-                    console.error('Cloud Sync Error:', error);
-                    alert('Warning: Could not sync quiz to Google Sheets. Students in incognito mode might not see the quiz. Please check your connection and try publishing again.');
+                    console.error('Backend Sync Error:', error);
+                    alert('Warning: Could not sync quiz to backend server. Shared links may not work.');
                 }
             }
 
@@ -1197,36 +1227,38 @@
                     }
                 }
 
-                // 2. If not found locally, fetch from Google Sheets (Remote logic for students/incognito)
+                // 2. If not found locally, fetch from Backend
                 if (!exercise) {
                     this.viewContainer.innerHTML = `
                         <div class="card" style="text-align:center; margin: 10vh auto; max-width: 400px;">
                             <div class="loading-spinner" style="margin-bottom: 1rem;">⏳</div>
                             <h3>Loading Exercise...</h3>
-                            <p style="color: var(--text-muted);">Fetching content from remote server.</p>
+                            <p style="color: var(--text-muted);">Fetching content from server.</p>
                         </div>
                     `;
 
                     try {
-                        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwz0PVfW_xj-2orZqeEtl3S4TFT1zouQydiy7LTENMT9jo6Q1ZomKrFlWgVh-1r73X3/exec';
-                        // Explicitly request the definition action
-                        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getDefinition&exerciseId=${exerciseId}`);
+                        const API_URL = `http://localhost:5001/api/quizzes/${exerciseId}`;
+                        const response = await fetch(API_URL);
 
-                        if (!response.ok) throw new Error('Failed to fetch from remote');
+                        if (!response.ok) {
+                            if (response.status === 404) throw new Error('Quiz not found');
+                            throw new Error('Failed to fetch from backend');
+                        }
 
                         const remoteData = await response.json();
-                        console.log('Remote data received:', remoteData);
+                        console.log('Backend data received:', remoteData);
 
                         if (remoteData && remoteData.id) {
                             exercise = {
                                 id: remoteData.id,
                                 title: remoteData.title,
                                 type: remoteData.type,
-                                isOpen: true,
+                                isOpen: remoteData.isOpen,
                                 questions: remoteData.questions,
                                 content: remoteData.content
                             };
-                            subject = { name: remoteData.subjectName || 'Cloud Exercise' };
+                            subject = { name: remoteData.subjectName || 'Exercise' };
                         }
                     } catch (error) {
                         console.error('Remote Fetch Error:', error);
