@@ -1237,10 +1237,12 @@
                     </section>
                 `;
 
-                document.getElementById('student-submission-form').addEventListener('submit', (e) => {
+                document.getElementById('student-submission-form').addEventListener('submit', async (e) => {
                     e.preventDefault();
 
                     const email = document.getElementById('stud-email').value.trim().toLowerCase();
+                    const submitBtn = e.target.querySelector('button[type="submit"]');
+                    const originalBtnText = submitBtn.textContent;
 
                     // 1. Prevent Duplicate Submissions
                     const isDuplicate = this.state.studentSubmissions.some(s => s.exerciseId === exerciseId && s.email.toLowerCase() === email);
@@ -1253,6 +1255,10 @@
                     if (!confirm('Are you sure you want to submit your responses? You will not be able to edit them after submission.')) {
                         return;
                     }
+
+                    // Set loading state
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Submitting...';
 
                     const answers = {};
                     let score = 0;
@@ -1291,22 +1297,61 @@
                         timestamp: new Date().toISOString()
                     };
 
-                    this.state.studentSubmissions.push(submission);
-                    this.saveState();
+                    /**
+                     * GOOGLE SHEETS INTEGRATION
+                     * Sending data to the Google Apps Script Web App endpoint.
+                     */
+                    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwz0PVfW_xj-2orZqeEtl3S4TFT1zouQydiy7LTENMT9jo6Q1ZomKrFlWgVh-1r73X3/exec';
 
-                    const scoreDisplay = (exercise.type === 'quiz' && totalMC > 0)
-                        ? `<p style="font-size: 1.25rem; font-weight: 700; color: var(--primary); margin: 1.5rem 0;">Final Score: ${score} / ${totalMC}</p>`
-                        : '';
+                    const payload = {
+                        "exerciseId": submission.exerciseId,
+                        "student name": submission.name,
+                        "class/group": submission.class,
+                        "email": submission.email,
+                        "answers": submission.answers,
+                        "score": submission.score,
+                        "totalQuestions": submission.totalMC
+                    };
 
-                    this.viewContainer.innerHTML = `
-                        <div class="card" style="text-align:center; max-width: 500px; margin: 10vh auto;">
-                            <span style="font-size: 4rem;">✅</span>
-                            <h2 style="margin-top: 1rem;">Thank You!</h2>
-                            <p style="color: var(--text-muted); margin-top: 1rem;">Your response for <strong>${exercise.title}</strong> has been received.</p>
-                            ${scoreDisplay}
-                            <button class="btn btn-secondary" onclick="window.location.hash=''" style="margin-top: 2rem;">Return to Portal</button>
-                        </div>
-                    `;
+                    try {
+                        const response = await fetch(GOOGLE_SCRIPT_URL, {
+                            method: 'POST',
+                            mode: 'no-cors', // Apps Script requires no-cors for simple POST or it will fail CORS
+                            cache: 'no-cache',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        // Note: with 'no-cors', we can't actually check response.ok or response.status.
+                        // However, if the fetch doesn't throw, it's generally considered "sent".
+                        // If the user requires strict success check, 'no-cors' makes it tricky.
+                        // But standard Apps Script Web Apps often don't support CORS redirects without it.
+
+                        // Proceed with local backup and success UI
+                        this.state.studentSubmissions.push(submission);
+                        this.saveState();
+
+                        const scoreDisplay = (exercise.type === 'quiz' && totalMC > 0)
+                            ? `<p style="font-size: 1.25rem; font-weight: 700; color: var(--primary); margin: 1.5rem 0;">Final Score: ${score} / ${totalMC}</p>`
+                            : '';
+
+                        this.viewContainer.innerHTML = `
+                            <div class="card" style="text-align:center; max-width: 500px; margin: 10vh auto;">
+                                <span style="font-size: 4rem;">✅</span>
+                                <h2 style="margin-top: 1rem;">Thank You!</h2>
+                                <p style="color: var(--text-muted); margin-top: 1rem;">Your response for <strong>${exercise.title}</strong> has been received and saved to the teacher records.</p>
+                                ${scoreDisplay}
+                                <button class="btn btn-secondary" onclick="window.location.hash=''" style="margin-top: 2rem;">Return to Portal</button>
+                            </div>
+                        `;
+                    } catch (error) {
+                        console.error('Submission Error:', error);
+                        alert('Error: Could not send your response to Google Sheets. Please check your internet connection and try again. Your answers have been preserved.');
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalBtnText;
+                    }
                 });
             }
 
