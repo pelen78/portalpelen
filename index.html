@@ -834,11 +834,14 @@
                 this.showToast('Document saved locally.');
             }
 
-            publishDocument(sId, dId) {
-                const doc = this.state.subjects.find(s => s.id === sId).exercises.find(e => e.id === dId);
+            async publishDocument(sId, dId) {
+                const subject = this.state.subjects.find(s => s.id === sId);
+                const doc = subject.exercises.find(e => e.id === dId);
                 doc.isOpen = true;
                 this.saveState();
-                this.showToast('Instruction Page published!');
+
+                await this.syncExerciseWithCloud(subject, doc);
+                this.showToast('Instruction Page published and synced!');
             }
 
             renderResponses(subjectId, quizId) {
@@ -975,8 +978,9 @@
                 this.showToast('Quiz progress saved locally.');
             }
 
-            publishQuiz(sId, qId) {
-                const quiz = this.state.subjects.find(s => s.id === sId).exercises.find(e => e.id === qId);
+            async publishQuiz(sId, qId) {
+                const subject = this.state.subjects.find(s => s.id === sId);
+                const quiz = subject.exercises.find(e => e.id === qId);
 
                 // Validation
                 for (let i = 0; i < quiz.questions.length; i++) {
@@ -1001,8 +1005,39 @@
 
                 quiz.isOpen = true;
                 this.saveState();
-                this.showToast('Quiz published successfully!');
+
+                await this.syncExerciseWithCloud(subject, quiz);
+                this.showToast('Quiz published and synced!');
                 this.render(); // Update the subject page UI if we are there
+            }
+
+            async syncExerciseWithCloud(subject, exercise) {
+                const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwz0PVfW_xj-2orZqeEtl3S4TFT1zouQydiy7LTENMT9jo6Q1ZomKrFlWgVh-1r73X3/exec';
+
+                const payload = {
+                    "action": "saveDefinition",
+                    "exerciseId": exercise.id,
+                    "title": exercise.title,
+                    "type": exercise.type,
+                    "questions": exercise.questions || [],
+                    "content": exercise.content || '',
+                    "subjectName": subject.name
+                };
+
+                try {
+                    // Using no-cors as per Apps Script Web App requirements for simple POST from static sites
+                    await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        cache: 'no-cache',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    console.log('Exercise synced to cloud:', exercise.id);
+                } catch (error) {
+                    console.error('Cloud Sync Error:', error);
+                    alert('Warning: Could not sync quiz to Google Sheets. Students in incognito mode might not see the quiz. Please check your connection and try publishing again.');
+                }
             }
 
             // Reporting logic
@@ -1174,23 +1209,24 @@
 
                     try {
                         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwz0PVfW_xj-2orZqeEtl3S4TFT1zouQydiy7LTENMT9jo6Q1ZomKrFlWgVh-1r73X3/exec';
-                        const response = await fetch(`${GOOGLE_SCRIPT_URL}?exerciseId=${exerciseId}`);
+                        // Explicitly request the definition action
+                        const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getDefinition&exerciseId=${exerciseId}`);
 
                         if (!response.ok) throw new Error('Failed to fetch from remote');
 
                         const remoteData = await response.json();
+                        console.log('Remote data received:', remoteData);
 
-                        // User requirement: Retrieve title, type, questions, options, correct answers
                         if (remoteData && remoteData.id) {
                             exercise = {
                                 id: remoteData.id,
                                 title: remoteData.title,
                                 type: remoteData.type,
-                                isOpen: true, // If it's on Sheets, we assume it's meant to be accessible
+                                isOpen: true,
                                 questions: remoteData.questions,
-                                content: remoteData.content // For document types
+                                content: remoteData.content
                             };
-                            subject = { name: remoteData.subjectName || 'Remote Exercise' };
+                            subject = { name: remoteData.subjectName || 'Cloud Exercise' };
                         }
                     } catch (error) {
                         console.error('Remote Fetch Error:', error);
@@ -1198,7 +1234,19 @@
                 }
 
                 if (!exercise) {
-                    this.viewContainer.innerHTML = `<div class="card" style="text-align:center; margin-top: 10vh;"><h1>404</h1><p>Exercise not found.</p></div>`;
+                    this.viewContainer.innerHTML = `
+                        <div class="card" style="text-align:center; margin: 10vh auto; max-width: 500px;">
+                            <h1 style="font-size: 3rem; margin-bottom: 1rem;">🔍</h1>
+                            <h2>Exercise Not Found</h2>
+                            <p style="color: var(--text-muted); margin: 1rem 0;">
+                                We couldn't find this quiz on our servers. 
+                            </p>
+                            <div style="background: #fff7ed; border: 1px solid #ffedd5; padding: 1rem; border-radius: 8px; text-align: left; font-size: 0.9rem;">
+                                <strong>Teacher Tip:</strong> If you just created this quiz, please click <strong>"Publish"</strong> or <strong>"Update Published"</strong> in your portal to sync it to the cloud.
+                            </div>
+                            <button class="btn btn-secondary" onclick="window.location.hash=''" style="margin-top: 2rem;">Return to Portal</button>
+                        </div>
+                    `;
                     return;
                 }
 
